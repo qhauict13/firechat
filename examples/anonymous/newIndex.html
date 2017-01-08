@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+
+    <!-- jQuery -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+
+    <!-- Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/3.3.0/firebase.js"></script>
+
+    <!-- Firechat -->
+    <link rel="stylesheet" href="https://cdn.firebase.com/libs/firechat/3.0.1/firechat.min.css" />
+    <script src="https://cdn.firebase.com/libs/firechat/3.0.1/firechat.min.js"></script>
+
+    <!-- Custom CSS -->
+    <style>
+        #firechat-wrapper {
+            height: 475px;
+            max-width: 325px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            background-color: #fff;
+            margin: 50px auto;
+            text-align: center;
+            -webkit-border-radius: 4px;
+            -moz-border-radius: 4px;
+            border-radius: 4px;
+            -webkit-box-shadow: 0 5px 25px #666;
+            -moz-box-shadow: 0 5px 25px #666;
+            box-shadow: 0 5px 25px #666;
+        }
+    </style>
+</head>
+
+<body>
+<div id="firechat-wrapper">
+
+</div>
+
+<button id="login-google" onclick="loginGoogle()">Login with Google</button>
+<button id="login-facebook" onclick="loginFacebook()">Login with Facebook</button>
+
+<script type="text/javascript">
+    // Initialize Firebase SDK
+    var config = {
+        apiKey: "AIzaSyCYXzP4hGgXSLCuJiGTbVKOEVWL6_BmOrs",
+        authDomain: "chat-project-89ec4.firebaseapp.com",
+        databaseURL: "https://chat-project-89ec4.firebaseio.com"
+    };
+    firebase.initializeApp(config);
+
+    function loginGoogle() {
+        var provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider).catch(function(error ) {
+            console.log(error);
+        });
+    }
+
+    function loginFacebook() {
+        var provider = new firebase.auth.FacebookAuthProvider();
+        firebase.auth().signInWithPopup(provider).catch(function(error ) {
+            console.log(error);
+        });
+    }
+
+    // Listen for authentication state changes
+    firebase.auth().onAuthStateChanged(function(user) {
+        if (user) {
+            // Get a reference to the Firebase Realtime Database
+            var chatRef = firebase.database().ref();
+            console.log(user);
+
+            // Create an instance of Firechat
+            var chat = new FirechatUI(chatRef, document.getElementById("firechat-wrapper"));
+            chat.setUser(user.uid, user.displayName, function(user) {
+                chat.resumeSession();
+            });
+
+            console.log(chat);
+        } else {
+            console.log('1111');
+            // If the user is not logged in, sign them in anonymously
+            firebase.auth().signInAnonymously().catch(function(error) {
+                console.log("Error signing user in anonymously:", error);
+            });
+        }
+    });
+</script>
+</body>
+</html>
