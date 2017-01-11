@@ -79,10 +79,12 @@
 
       // Update the user record with a default name on user's first visit.
       this._userRef.transaction(function(current) {
-        if (!current || !current.id || !current.name) {
+        if (!current || !current.id || !current.name || !current.email) {
           return {
             id: self._userId,
-            name: self._userName
+            name: self._userName,
+              email: self._userEmail,
+              avatarUrl: self._userAvatar
           };
         }
       }, function(error, committed, snapshot) {
@@ -247,13 +249,15 @@
   // --------------
 
   // Initialize the library and setup data listeners.
-  Firechat.prototype.setUser = function(userId, userName, callback) {
+  Firechat.prototype.setUser = function(userId, userName, userEmail, userAvatar, callback) {
     var self = this;
 
     self._firebaseApp.auth().onAuthStateChanged(function(user) {
       if (user) {
         self._userId = userId.toString();
         self._userName = userName.toString();
+        self._userEmail = userEmail.toString();
+        self._userAvatar = userAvatar.toString();
         self._userRef = self._firechatRef.child('users').child(self._userId);
         self._sessionRef = self._userRef.child('sessions').push();
         self._sessionId = self._sessionRef.key;
@@ -392,6 +396,7 @@
         message = {
           userId: self._userId,
           name: self._userName,
+            userAvatar: self._userAvatar,
           timestamp: firebase.database.ServerValue.TIMESTAMP,
           message: messageContent,
           type: messageType || 'default'

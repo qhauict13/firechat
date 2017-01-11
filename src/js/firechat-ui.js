@@ -230,11 +230,11 @@
    * This method assumes that the underlying Firebase reference has
    * already been authenticated.
    */
-  FirechatUI.prototype.setUser = function(userId, userName) {
+  FirechatUI.prototype.setUser = function(userId, userName, userEmail, userAvatar) {
     var self = this;
 
     // Initialize data events
-    self._chat.setUser(userId, userName, function(user) {
+    self._chat.setUser(userId, userName, userEmail, userAvatar, function(user) {
       self._user = user;
 
       if (self._chat.userIsModerator()) {
@@ -985,6 +985,7 @@
       localtime       : self.formatTime(rawMessage.timestamp),
       message         : rawMessage.message || '',
       userId          : rawMessage.userId,
+        userAvatar    : rawMessage.userAvatar,
       name            : rawMessage.name,
       type            : rawMessage.type || 'default',
       isSelfMessage   : (self._user && rawMessage.userId == self._user.id),
