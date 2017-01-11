@@ -47,7 +47,7 @@
     this._userRef        = null;
     this._messageRef     = this._firechatRef.child('room-messages');
     this._roomRef        = this._firechatRef.child('room-metadata');
-    this._privateRoomRef = this._firechatRef.child('room-private-metadata');
+    this._pairMessageRef = this._firechatRef.child('pair_messages');
     this._moderatorsRef  = this._firechatRef.child('moderators');
     this._suspensionsRef = this._firechatRef.child('suspensions');
     this._usersOnlineRef = this._firechatRef.child('user-names-online');
