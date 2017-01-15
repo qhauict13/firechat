@@ -47,7 +47,7 @@
     this._userRef        = null;
     this._messageRef     = this._firechatRef.child('room-messages');
     this._roomRef        = this._firechatRef.child('room-metadata');
-    this._pairMessageRef = this._firechatRef.child('pair_messages');
+    this._pairMessageRef = this._firechatRef.child('pair-messages');
     this._moderatorsRef  = this._firechatRef.child('moderators');
     this._suspensionsRef = this._firechatRef.child('suspensions');
     this._usersOnlineRef = this._firechatRef.child('user-names-online');
@@ -353,16 +353,31 @@
 
       // Setup message listeners
       self._roomRef.child(roomId).once('value', function(snapshot) {
-        self._messageRef.child(roomId).limitToLast(self._options.numMaxMessages).on('child_added', function(snapshot) {
-          self._onNewMessage(roomId, snapshot);
-        }, /* onCancel */ function() {
-          // Turns out we don't have permission to access these messages.
-          self.leaveRoom(roomId);
-        }, /* context */ self);
+          var currentRoomType = snapshot.child('type').val();
 
-        self._messageRef.child(roomId).limitToLast(self._options.numMaxMessages).on('child_removed', function(snapshot) {
-          self._onRemoveMessage(roomId, snapshot);
-        }, /* onCancel */ function(){}, /* context */ self);
+            if (currentRoomType === 'private') {
+                self._pairMessageRef.child(roomId).limitToLast(self._options.numMaxMessages).on('child_added', function(snapshot) {
+                    self._onNewMessage(roomId, snapshot);
+                }, /* onCancel */ function() {
+                    // Turns out we don't have permission to access these messages.
+                    self.leaveRoom(roomId);
+                }, /* context */ self);
+
+                self._pairMessageRef.child(roomId).limitToLast(self._options.numMaxMessages).on('child_removed', function(snapshot) {
+                    self._onRemoveMessage(roomId, snapshot);
+                }, /* onCancel */ function(){}, /* context */ self);
+            } else {
+                self._messageRef.child(roomId).limitToLast(self._options.numMaxMessages).on('child_added', function(snapshot) {
+                    self._onNewMessage(roomId, snapshot);
+                }, /* onCancel */ function() {
+                    // Turns out we don't have permission to access these messages.
+                    self.leaveRoom(roomId);
+                }, /* context */ self);
+
+                self._messageRef.child(roomId).limitToLast(self._options.numMaxMessages).on('child_removed', function(snapshot) {
+                    self._onRemoveMessage(roomId, snapshot);
+                }, /* onCancel */ function(){}, /* context */ self);
+            }
       }, /* onFailure */ function(){}, self);
     });
   };
@@ -397,7 +412,7 @@
           userId: self._userId,
           name: self._userName,
             userAvatar: self._userAvatar,
-          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          createdAt: firebase.database.ServerValue.TIMESTAMP,
           message: messageContent,
           type: messageType || 'default'
         },
@@ -411,8 +426,17 @@
       return;
     }
 
-    newMessageRef = self._messageRef.child(roomId).push();
-    newMessageRef.setWithPriority(message, firebase.database.ServerValue.TIMESTAMP, cb);
+    var roomType = '';
+    this._roomRef.child(roomId).child('type').once('value', function(snapshot) {
+        roomType = snapshot.val();
+
+        if (roomType === 'private') {
+            newMessageRef = self._pairMessageRef.child(roomId).push();
+        } else {
+            newMessageRef = self._messageRef.child(roomId).push();
+        }
+        newMessageRef.setWithPriority(message, firebase.database.ServerValue.TIMESTAMP, cb);
+      });
   };
 
   Firechat.prototype.deleteMessage = function(roomId, messageId, cb) {
