@@ -19,11 +19,12 @@
   var root = this,
       previousFirechat = root.Firechat;
 
-  function Firechat(firebaseRef, options) {
+  function Firechat(firebaseRef, storage, options) {
 
     // Cache the provided Database reference and the firebase.App instance
     this._firechatRef = firebaseRef;
     this._firebaseApp = firebaseRef.database.app;
+    this._storage = storage;
 
     // User-specific instance variables.
     this._user = null;
@@ -81,10 +82,11 @@
       this._userRef.transaction(function(current) {
         if (!current || !current.id || !current.name || !current.email) {
           return {
-            id: self._userId,
+            userId: self._userId,
             name: self._userName,
               email: self._userEmail,
-              avatarUrl: self._userAvatar
+              avatarUrl: self._userAvatar,
+              status: 'online'
           };
         }
       }, function(error, committed, snapshot) {
@@ -406,7 +408,7 @@
     self._onLeaveRoom(roomId);
   };
 
-  Firechat.prototype.sendMessage = function(roomId, messageContent, messageType, cb) {
+  Firechat.prototype.sendMessage = function(roomId, messageContent, messageType, file, cb) {
     var self = this,
         message = {
           userId: self._userId,
@@ -435,7 +437,19 @@
         } else {
             newMessageRef = self._messageRef.child(roomId).push();
         }
+
         newMessageRef.setWithPriority(message, firebase.database.ServerValue.TIMESTAMP, cb);
+
+        if (messageType === 'image') {
+            self._storage.ref().child(file.name).put(file, {contentType: file.type})
+                .then(function(snapshot) {
+                    // Get the file's Storage URI and update the chat message placeholder.
+                    var filePath = snapshot.metadata.downloadURLs[0];
+                    newMessageRef.update({
+                        'message' : filePath
+                    }, cb);
+                }.bind(this));
+        }
       });
   };
 

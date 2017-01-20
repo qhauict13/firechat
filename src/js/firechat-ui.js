@@ -14,7 +14,7 @@
     throw new Error("Unable to find chat templates!");
   }
 
-  function FirechatUI(firebaseRef, el, options) {
+  function FirechatUI(firebaseRef, el, storage, options) {
     var self = this;
 
     if (!firebaseRef) {
@@ -30,16 +30,16 @@
 
     this._el = el;
     this._user = null;
-    this._chat = new Firechat(firebaseRef, options);
+    this._chat = new Firechat(firebaseRef, storage, options);
 
     // A list of rooms to enter once we've made room for them (once we've hit the max room limit).
     this._roomQueue = [];
 
     // Define some constants regarding maximum lengths, client-enforced.
-    this.maxLengthUsername = 15;
+    this.maxLengthUsername = 50;
     this.maxLengthUsernameDisplay = 15;
-    this.maxLengthRoomName = 24;
-    this.maxLengthMessage = 120;
+    this.maxLengthRoomName = 50;
+    this.maxLengthMessage = 1000;
     this.maxUserSearchResults = 100;
 
     // Define some useful regexes.
@@ -926,6 +926,30 @@
       return false;
     });
 
+    var mediaCaptureEl = $('#mediaCapture');
+    $('#submitImage').on('click', function() {
+        mediaCaptureEl.click();
+    });
+      mediaCaptureEl.on('change', function() {
+          var file = event.target.files[0];
+
+          // Clear the selection in the file picker input.
+          $('image-form').trigger('reset');
+
+          // Check if the file is an image.
+          if (!file.type.match('image.*')) {
+              var data = {
+                  message: 'You can only share images',
+                  timeout: 2000
+              };
+              return;
+          }
+
+          // We add a message with a loading icon that will get updated with the shared image.
+
+          self._chat.sendMessage(roomId, 'image message', 'image', file);
+      });
+
     // Automatically select the new tab.
     this.focusTab(roomId);
   };
@@ -992,16 +1016,20 @@
       disableActions  : (!self._user || rawMessage.userId == self._user.id)
     };
 
+    if (rawMessage.type === 'image') {
+      message.imageUrl = rawMessage.imageUrl;
+    }
+
     // While other data is escaped in the Underscore.js templates, escape and
     // process the message content here to add additional functionality (add links).
     // Also trim the message length to some client-defined maximum.
     var messageConstructed = '';
     message.message = _.map(message.message.split(' '), function(token) {
-      if (self.urlPattern.test(token) || self.pseudoUrlPattern.test(token)) {
-        return self.linkify(encodeURI(token));
-      } else {
+      // if (self.urlPattern.test(token) || self.pseudoUrlPattern.test(token)) {
+      //   return self.linkify(encodeURI(token));
+      // } else {
         return _.escape(token);
-      }
+      // }
     }).join(' ');
     message.message = self.trimWithEllipsis(message.message, self.maxLengthMessage);
 

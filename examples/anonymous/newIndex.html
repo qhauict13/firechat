@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
 
     <!-- jQuery -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.1.0/jquery.min.js"></script>
+    <script src="../../src/js/libs/jquery-3.1.1.min.js"></script>
 
     <!-- Firebase -->
     <script src="https://www.gstatic.com/firebasejs/3.3.0/firebase.js"></script>
@@ -45,9 +45,11 @@
 <script type="text/javascript">
     // Initialize Firebase SDK
     var config = {
-        apiKey: "AIzaSyCYXzP4hGgXSLCuJiGTbVKOEVWL6_BmOrs",
-        authDomain: "chat-project-89ec4.firebaseapp.com",
-        databaseURL: "https://chat-project-89ec4.firebaseio.com"
+        apiKey: "AIzaSyAj1K9DpwE8UJwFJPSkSIb7Gj7xp76SJXE",
+        authDomain: "silverchat-9d5e2.firebaseapp.com",
+        databaseURL: "https://silverchat-9d5e2.firebaseio.com",
+        storageBucket: "silverchat-9d5e2.appspot.com",
+        messagingSenderId: "1029667922407"
     };
     firebase.initializeApp(config);
 
@@ -70,9 +72,10 @@
         if (user) {
             // Get a reference to the Firebase Realtime Database
             var chatRef = firebase.database().ref();
+            var storageRef = firebase.storage();
 
             // Create an instance of Firechat
-            var chat = new FirechatUI(chatRef, document.getElementById("firechat-wrapper"));
+            var chat = new FirechatUI(chatRef, document.getElementById("firechat-wrapper"), storageRef);
             chat.setUser(user.uid, user.displayName, user.email, user.photoURL, function(user) {
                 chat.resumeSession();
             });
